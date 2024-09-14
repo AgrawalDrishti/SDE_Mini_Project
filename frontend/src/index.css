@@ -1,68 +1,167 @@
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
 body {
-  margin: 0;
+  margin-top: 10vh; /* Reserve space for the navbar */
+  font-family: Arial, sans-serif;
+  background: linear-gradient(to bottom, #80c0de, #aad2e4, #c8e1e7); /* Background gradient */
+}
+
+/* Main container holding the links */
+.container {
+  min-height: 86vh; /* Remaining height after the navbar */
+  background-image: url('./assets/bot.png'); /* Background image */
+  background-position: left bottom; /* Adjusts the position of the background image */
+  background-repeat: no-repeat;
+  padding-top: 20px; /* Optional padding for space at the top */
   display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  justify-content: flex-end; /* Align content (links) to the right */
+  align-items: flex-start; /* Start items from the top */
+  padding-right: 20px; /* Adds some spacing from the right edge */
+  width: 95vw;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+.navbar {
+  height: 10vh;
+  width: 100vw;
+  background-color: rgb(21, 60, 59);
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
+.navbar p {
+  font-size: 25px;
+  font-family:Georgia, 'Times New Roman', Times, serif
+}
+
+.main{
+  margin-top: 5%;
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  /* align-items: flex-end; */
+}
+
+
+/* Typewriter effect */
+@keyframes typewriter {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100ch; /* Set the width to accommodate the text */
+  }
+}
+
+@keyframes blink {
+  50% {
+    border-color: transparent;
+  }
+}
+
+/* Wrapper for the typewriter effect */
+.main .typewriter {
+  display: inline-block; /* Allows width changes */
+  overflow: hidden; /* Hides overflowing content */
+  border-right: 2px solid rgba(0, 0, 0, 0.75); /* Blinking cursor */
+  white-space: pre-wrap; /* Preserve line breaks */
+  animation: 
+    typewriter 10s steps(100, end) 1s forwards, /* Typing animation */
+    blink 0.75s step-end infinite 1s; /* Blinking cursor during typing */
+  animation-fill-mode: forwards; /* Ensures the final state persists */
+  max-width: 100%; /* Prevent overflow */
+}
+
+/* Hide cursor after typing */
+.main .typewriter.finished {
+  border-right: none;
+}
+
+/* Adjust text styles inside the typewriter wrapper */
+.start_text {
+  font-size: 3em;
+  margin-bottom: 20px;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  font-weight: bold;
+}
+
+.mid_text {
+  color: rgb(4, 87, 160);
+}
+
+.end_text{
+  font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.main p {
   font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+
+
+.links {
+  display: flex;
+  /* border: 1px black solid; */
+  margin-top: 50px;
+  flex-direction: column;
+  align-items: flex-end; /* Aligns form elements to the right */
+  width: 80%; 
+  margin-bottom: 0px; /* Optional: Adds some space below the links section */
+  height: 100%;
+}
+
+#link_form{
+  width: 100%;
+  height: 100%;
+}
+/* Form input container for dropdown and input in one row */
+.form-row {
+  display: flex;
+  width: 100%; /* Make the form row take full width */
+  justify-content: space-between;
+  margin-bottom: 0px; /* Adds spacing between rows */
+}
+
+/* Dropdown and input should share space in the row */
+#dropdown {
+  width: 20%; 
+  padding: 10px;
+  border: 1px solid black;
+  border-radius: 5px;
+  height: 50%;
+}
+
+#input_type {
+  width: 78%; /* Adjust width of the input box */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  height: 50%;
+}
+
+/* File input is on its own */
+#input_file {
+  width: 78%; /* Full width for the file input */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Submit/Upload button in a separate row */
+#submit_button, #choose_file {
+  background-color: rgb(46, 143, 208);
+  border: none;
+  color: white;
+  padding: 10px;
+  width: 100%; /* Full width for buttons */
+  cursor: pointer;
+  border-radius: 5px;
+  margin-top: 0px;
+  font-size: 15px;
+}
+
+#submit_button:hover, #choose_file:hover {
+  background-color: rgb(100, 221, 246); /* Darker shade on hover */
 }

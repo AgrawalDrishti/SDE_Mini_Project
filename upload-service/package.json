@@ -3,18 +3,21 @@
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon app.js"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google-cloud/storage": "^7.13.0",
     "axios": "^1.7.7",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "express-fileupload": "^1.5.1",
     "nodemon": "^3.1.7",
+    "simple-git": "^3.27.0",
     "unzipper": "^0.12.3"
   }
 }

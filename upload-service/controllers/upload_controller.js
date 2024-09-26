@@ -1,5 +1,10 @@
 const axios = require('axios');
 const unzipper = require("unzipper");
+const simpleGit = require('simple-git');
+const crypto = require('crypto');
+
+simpleGit().clean(simpleGit.CleanOptions.FORCE);
+
 
 /*
 Helper Functions
@@ -31,6 +36,7 @@ function is_valid_github_repo_url(url) {
 Controller Functions
 */
 
+// req body should contain dockerhub url with key docker_image
 const docker_image_handler = async (req,res) => {
     console.log("Docker image post request received");
     try {
@@ -38,7 +44,7 @@ const docker_image_handler = async (req,res) => {
         
         if (Object.keys(req.body).length === 0){
             return res.status(400).send({error:"No Docker image provided"});
-        } 
+        }
         
         if ( check_invalid_docker_image(req.body.docker_image) ){
             return res.status(404).send({error:"No Docker image provided"});
@@ -63,6 +69,7 @@ const docker_image_handler = async (req,res) => {
     }
 };
 
+// req body should contain github repo url key github_url
 const github_url_handler = async (req,res) => {
     console.log("GitHub URL post request received");
     const url = req.body.github_url;
@@ -78,10 +85,18 @@ const github_url_handler = async (req,res) => {
         const repo_response = await axios.get(url);
         if (repo_response.status === 200){
             console.log("Provided GitHub URL:",url);
-            // TO DO : fetch the code and then build it
-            res.status(200).send({message:"Success"});
+            try {
+                const cloned_folder_name = crypto.hash('sha256',url);
+                simpleGit().clone(url,'./cloned_repositories/'+cloned_folder_name);
+                console.log("Cloned the repository at",url);
+                
+                // TO DO : Push this in cloud bucket
+                return res.status(200).send({message:"Success, Cloning the repository"});
+            } catch (error) {
+                return res.status(400).send({error:"Failed "+error});
+            }
         } else {
-            res.status(400).send({error:"Failed"});
+            return res.status(400).send({error:"Failed"});
         }
     } catch (error) {
         if (error.response && error.response.status === 404){
@@ -92,13 +107,17 @@ const github_url_handler = async (req,res) => {
     }
 };
 
+// req should contain a zip file with key codebase
 const zip_file_handler = async (req,res) => {
     console.log("Zip file post request received");
     try {
         if (req.files === null || Object.keys(req.files).length===0 || req.files.codebase === "") {
             return res.status(400).send({error:"No file uploaded"});
         }
-
+        if (Object(req.files)["codebase"] === undefined) {
+            console.log("Incorrect request format");
+            return res.status(400).send({error:"Incorrect request format"});
+        }
         const file = req.files.codebase;
         console.log("File name:",file.name);
         console.log("File size:",file.size);
@@ -113,10 +132,12 @@ const zip_file_handler = async (req,res) => {
         const directory = await unzipper.Open.buffer(zipBuffer);
         const containsNodeModules = directory.files.some(file => file.path.includes("node_modules"));
         if (containsNodeModules) {
-            return res.status(400).send({error:"Zip file contains node_modules"});
+            return res.status(400).send({error:"Zip file contains node_modules, please remove them"});
         }
+        
         return res.status(200).send({message:"Success"});
-        // TO DO : Push this in queue1 for building
+        // TO DO : Push this in cloud bucket
+
     } catch (error) {
         console.log(error);
         return res.status(500).send({error:"Internal Server Error"});

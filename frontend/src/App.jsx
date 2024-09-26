@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "axios";
 
 function App() {
   const [selectedOption, setSelectedOption] = useState("github");
@@ -22,28 +23,51 @@ function App() {
     setFileSelected(event.target.files[0]);
   };
 
-  function uploadZip() {
+  async function uploadZip() {
     if (!fileSelected) {
       alert("Please choose a zip file before uploading");
       return;
     }
-
     console.log("zip uploaded", fileSelected);
-    fetch("uploads/" + encodeURIComponent(fileSelected.name), {
-      method: "PUT",
-      body: fileSelected,
-    })
-      .then((response) => {
-        if (response.ok) {
-          alert("Your file has been uploaded successfully");
-        } else {
-          alert("File upload failed");
-        }
-      })
-      .catch((error) => {
-        alert("An error occurred while uploading the file");
-        console.error("Upload error:", error);
-      });
+    const formData = new FormData();
+    formData.append('codebase' , fileSelected);
+    try {
+      const response = await axios.post('http://localhost:3000/upload/zip_file' , formData)
+      console.log(response);
+      alert("Successfully Uploaded Your Zip!");
+    } catch (err) {
+      console.error('Error ' , err);
+      alert("Something went wrong");
+    }
+  };
+
+  const sendLink = async (event) => {
+    event.preventDefault();
+    if(selectedOption === "github"){
+      try {
+        const response = await axios.post('http://localhost:3000/upload/github_url',{
+          "github_url": document.getElementById('input_type').value
+        });
+        console.log(response);
+        console.log("Provided GitHub Link:",document.getElementById('input_type').value);
+        alert("Successfully Sent the GitHub Link!");
+      } catch (err) {
+        console.error('Error ' , err);
+        alert("Something went wrong ",err);
+      }
+    } else {
+      try {
+        const response = await axios.post('http://localhost:3000/upload/docker_image',{
+          "docker_image": document.getElementById('input_type').value
+        });
+        console.log(response);
+        console.log("Provided GitHub Link:",document.getElementById('input_type').value);
+        alert("Successfully Sent the Docker Image!");
+      } catch (err) {
+        console.error('Error ' , err);
+        alert("Something went wrong ",err);
+      }
+    }
   }
 
   return (
@@ -88,7 +112,7 @@ function App() {
                     <option value="zip">Upload zip</option>
                   </select>
                 </div>
-                <button type="submit" id="submit_button">
+                <button type="submit" id="submit_button" onClick={sendLink}>
                   Submit
                 </button>
               </form>
@@ -99,11 +123,12 @@ function App() {
                     type="file"
                     id="input_file"
                     onChange={handleFileChange}
+                    accept=".zip"
                   />
                   <select
                     name="dropdown"
                     id="dropdown"
-                    onChange={handleDropdownChange}
+                    onChange={handleDropdownChange}                    
                     value={selectedOption}
                   >
                     <option value="github">Github</option>

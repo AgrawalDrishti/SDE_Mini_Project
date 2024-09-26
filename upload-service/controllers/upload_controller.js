@@ -86,12 +86,12 @@ const github_url_handler = async (req,res) => {
         if (repo_response.status === 200){
             console.log("Provided GitHub URL:",url);
             try {
-                const cloned_folder_name = crypto.hash('sha256',url);
+                const cloned_folder_name = crypto.createHash('sha256').update(url).digest('hex');
                 simpleGit().clone(url,'./cloned_repositories/'+cloned_folder_name);
                 console.log("Cloned the repository at",url);
                 
-                // TO DO : Push this in cloud bucket
                 return res.status(200).send({message:"Success, Cloning the repository"});
+                // TO DO : Push this in cloud bucket
             } catch (error) {
                 return res.status(400).send({error:"Failed "+error});
             }
@@ -123,7 +123,12 @@ const zip_file_handler = async (req,res) => {
         console.log("File size:",file.size);
         console.log("File mimetype:",file.mimetype);
 
-        if (file.mimetype !== 'application/zip') {
+        if (file.mimetype !== 'application/zip' && 
+            file.mimetype != 'application/x-zip-compressed' && 
+            file.mimetype != 'application/x-zip' && 
+            file.mimetype != 'application/zip-compressed' && 
+            file.mimetype != 'application/octet-stream'
+        ){
             return res.status(400).send({error:"Uploaded file is not a zip file"});
         }
         

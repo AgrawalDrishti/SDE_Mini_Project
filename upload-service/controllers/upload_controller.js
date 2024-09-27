@@ -6,15 +6,16 @@ const crypto = require('crypto');
 const { Storage } = require('@google-cloud/storage'); // Import GCP storage
 const path = require('path');
 const fs = require('fs');
+const fse = require('fs-extra');
 const archiver = require('archiver');
 
 simpleGit().clean(simpleGit.CleanOptions.FORCE);
 
-const keyFilePath = 'C:/Users/drish/Downloads/deploymentbot-082780-2e38f5525e32.json';
+const keyFilePath = '../upload-service/gcp_key.json';
 
 if (!fs.existsSync(keyFilePath)) {
     console.error('Service account key file is missing!');
-    process.exit(1); // Exit the process to avoid further errors
+    process.exit(1);
 }
 
 
@@ -33,7 +34,7 @@ Helper Functions
 const uploadFileToBucket = async (filePath, destination) => {
     try {
         await bucket.upload(filePath, {
-            destination: destination,
+            destination: 'ClonedRepositories/'+destination,
         });
         console.log(filePath + ' uploaded to ' + bucketName + '/' + destination);
     } catch (error) {
@@ -169,14 +170,16 @@ const github_url_handler = async (req, res) => {
 
                 const destination = cloned_folder_name + '.zip';
 
-                console.log("Uploading directory");
+                console.log("Uploading zip");
                 await uploadFileToBucket(zipPath, destination);
-
+                
+                fs.rmdir(localPath, {recursive:true} , (err) => err && console.error(err));
+                fse.remove(zipPath, (err) => err && console.error(err));
                 return res.status(200).send({ message: "Success, Repository Uploaded" });
             } catch (error) {
-
                 return res.status(400).send({ error: "Failed " + error });
             }
+
         } else {
             return res.status(400).send({ error: "Failed" });
         }
@@ -211,6 +214,7 @@ const zip_file_handler = async (req,res) => {
             file.mimetype != 'application/zip-compressed' && 
             file.mimetype != 'application/octet-stream'
         ){
+
             return res.status(400).send({error:"Uploaded file is not a zip file"});
         }
         
@@ -222,7 +226,16 @@ const zip_file_handler = async (req,res) => {
             return res.status(400).send({error:"Zip file contains node_modules, please remove them"});
         }
         
-        return res.status(200).send({message:"Success"});
+        const destination = crypto.createHash('sha256').update(file.name).digest('hex') + '.zip';
+        const zipPath = './cloned_repositories' + destination;
+        
+        fs.writeFile(zipPath, zipBuffer, (err) => err && console.error(err));
+
+        console.log("Uploading zip");
+        await uploadFileToBucket(zipPath, destination);
+
+        fse.remove(zipPath, (err) => err && console.error(err));
+        return res.status(200).send({ message: "Success, file saved" });
         // TO DO : Push this in cloud bucket
 
     } catch (error) {

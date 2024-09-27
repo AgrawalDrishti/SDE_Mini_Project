@@ -1,14 +1,82 @@
+
 const axios = require('axios');
 const unzipper = require("unzipper");
 const simpleGit = require('simple-git');
 const crypto = require('crypto');
+const { Storage } = require('@google-cloud/storage'); // Import GCP storage
+const path = require('path');
+const fs = require('fs');
+const archiver = require('archiver');
 
 simpleGit().clean(simpleGit.CleanOptions.FORCE);
 
+const keyFilePath = 'C:/Users/drish/Downloads/deploymentbot-082780-2e38f5525e32.json';
+
+if (!fs.existsSync(keyFilePath)) {
+    console.error('Service account key file is missing!');
+    process.exit(1); // Exit the process to avoid further errors
+}
+
+
+const storage = new Storage({
+    projectId: 'deploymentbot-082780',
+    keyFilename: keyFilePath 
+});
+
+const bucketName = 'cloned_repo_bucket082780';
+const bucket = storage.bucket(bucketName);
 
 /*
 Helper Functions
 */
+
+const uploadFileToBucket = async (filePath, destination) => {
+    try {
+        await bucket.upload(filePath, {
+            destination: destination,
+        });
+        console.log(filePath + ' uploaded to ' + bucketName + '/' + destination);
+    } catch (error) {
+        console.error('Error uploading file:', error);
+    }
+};
+
+const uploadDirectoryToBucket = async (dirPath, destinationPrefix) => {
+    const files = fs.readdirSync(dirPath);
+    for (const file of files) {
+        const filePath = path.join(dirPath, file);
+        const destination = path.join(destinationPrefix, file);
+
+        if (fs.lstatSync(filePath).isDirectory()) {
+            console.log("Uploading directory");
+            await uploadDirectoryToBucket(filePath, destination);
+        } else {
+            await uploadFileToBucket(filePath, destination);
+            console.log("Uploading File");
+        }
+    }
+};
+
+const zipDirectory = (sourceDir, outPath) => {
+    return new Promise((resolve, reject) => {
+        const output = fs.createWriteStream(outPath);
+        const archive = archiver('zip', { zlib: { level: 9 } });
+
+        output.on('close', () => {
+            console.log(`Zipped ${archive.pointer()} total bytes`);
+            resolve();
+        });
+
+        archive.on('error', (err) => {
+            reject(err);
+        });
+
+        archive.pipe(output);
+        archive.directory(sourceDir, false); // Add the directory to the archive
+        archive.finalize();
+    });
+};
+
 
 // Function to check if the docker image is valid
 function check_invalid_docker_image(image){
@@ -69,40 +137,54 @@ const docker_image_handler = async (req,res) => {
     }
 };
 
+
 // req body should contain github repo url key github_url
-const github_url_handler = async (req,res) => {
+const github_url_handler = async (req, res) => {
     console.log("GitHub URL post request received");
     const url = req.body.github_url;
     try {
-        if (Object.keys(req.body).length === 0){
-            return res.status(400).send({error:"No GitHub URL provided"});
+        if (Object.keys(req.body).length === 0) {
+            return res.status(400).send({ error: "No GitHub URL provided" });
         }
 
-        if (!is_valid_github_repo_url(url)){
-            return res.status(400).send({error:"Invalid GitHub Repository URL"});
+        if (!is_valid_github_repo_url(url)) {
+            return res.status(400).send({ error: "Invalid GitHub Repository URL" });
         }
 
         const repo_response = await axios.get(url);
-        if (repo_response.status === 200){
-            console.log("Provided GitHub URL:",url);
+        if (repo_response.status === 200) {
+            console.log("Provided GitHub URL:", url);
             try {
                 const cloned_folder_name = crypto.createHash('sha256').update(url).digest('hex');
-                simpleGit().clone(url,'./cloned_repositories/'+cloned_folder_name);
-                console.log("Cloned the repository at",url);
-                
-                return res.status(200).send({message:"Success, Cloning the repository"});
-                // TO DO : Push this in cloud bucket
+                const localPath = './cloned_repositories/' + cloned_folder_name;
+                const zipPath = './cloned_repositories/' + cloned_folder_name + '.zip';
+
+                console.log("LocalPath is : " ,localPath);
+
+                await simpleGit().clone(url, localPath);
+                console.log("Cloned the repository at", url);
+
+                await zipDirectory(localPath, zipPath);
+                console.log("Zipped the directory to", zipPath);
+
+                const destination = cloned_folder_name + '.zip';
+
+                console.log("Uploading directory");
+                await uploadFileToBucket(zipPath, destination);
+
+                return res.status(200).send({ message: "Success, Repository Uploaded" });
             } catch (error) {
-                return res.status(400).send({error:"Failed "+error});
+
+                return res.status(400).send({ error: "Failed " + error });
             }
         } else {
-            return res.status(400).send({error:"Failed"});
+            return res.status(400).send({ error: "Failed" });
         }
     } catch (error) {
-        if (error.response && error.response.status === 404){
-            res.status(404).send({error:"Specified Github URL not found"});
+        if (error.response && error.response.status === 404) {
+            return res.status(404).send({ error: "Specified GitHub URL not found" });
         } else {
-            res.status(500).send({error:"Internal Server Error"});
+            return res.status(500).send({ error: "Internal Server Error" });
         }
     }
 };

@@ -1,4 +1,3 @@
-
 const axios = require('axios');
 const unzipper = require("unzipper");
 const simpleGit = require('simple-git');
@@ -34,7 +33,7 @@ Helper Functions
 const uploadFileToBucket = async (filePath, destination) => {
     try {
         await bucket.upload(filePath, {
-            destination: 'ClonedRepositories/'+destination,
+            destination: destination,
         });
         console.log(filePath + ' uploaded to ' + bucketName + '/' + destination);
     } catch (error) {
@@ -168,10 +167,12 @@ const github_url_handler = async (req, res) => {
                 await zipDirectory(localPath, zipPath);
                 console.log("Zipped the directory to", zipPath);
 
-                const destination = cloned_folder_name + '.zip';
+                const destination = 'ClonedRepositories/'+cloned_folder_name + '.zip';
 
                 console.log("Uploading zip");
                 await uploadFileToBucket(zipPath, destination);
+
+                axios.post(process.env.QUEUE_SERVICE_URL+'/enqueue', { zip_to_build: destination });
                 
                 fs.rmdir(localPath, {recursive:true} , (err) => err && console.error(err));
                 fse.remove(zipPath, (err) => err && console.error(err));
@@ -226,7 +227,7 @@ const zip_file_handler = async (req,res) => {
             return res.status(400).send({error:"Zip file contains node_modules, please remove them"});
         }
         
-        const destination = crypto.createHash('sha256').update(file.name).digest('hex') + '.zip';
+        const destination = 'ClonedRepositories/'+crypto.createHash('sha256').update(file.name).digest('hex') + '.zip';
         const zipPath = './cloned_repositories' + destination;
         
         fs.writeFile(zipPath, zipBuffer, (err) => err && console.error(err));
@@ -234,9 +235,10 @@ const zip_file_handler = async (req,res) => {
         console.log("Uploading zip");
         await uploadFileToBucket(zipPath, destination);
 
+        axios.post(process.env.QUEUE_SERVICE_URL+'/enqueue', { zip_to_build: destination });
+
         fse.remove(zipPath, (err) => err && console.error(err));
         return res.status(200).send({ message: "Success, file saved" });
-        // TO DO : Push this in cloud bucket
 
     } catch (error) {
         console.log(error);

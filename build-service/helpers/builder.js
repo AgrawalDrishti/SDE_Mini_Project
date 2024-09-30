@@ -3,6 +3,7 @@ const { Mutex } = require('async-mutex');
 const { Storage } = require("@google-cloud/storage");
 const AdmZip = require("adm-zip");
 const fs = require("fs");
+const fse = require("fs-extra")
 const { exec } = require("child_process");
 
 const mutex = new Mutex();
@@ -72,7 +73,6 @@ async function build(project_zip_url){
             
             // Going inside project folder
             process.chdir("./downloaded_projects/"+app_path);
-            
             // Building the docker image
             exec("docker build -t my-curr-project .", (error, stdout, stderr) => {
                 if (error) {
@@ -84,7 +84,7 @@ async function build(project_zip_url){
                 console.log(`stdout: ${stdout}`);
 
                 // Tagging the docker image
-                exec("docker tag my-curr-project ash538/deployment-bot:v1."+toString(itr), (error, stdout, stderr) => {
+                exec("docker tag my-curr-project ash538/deployment-bot:v1."+String(itr), (error, stdout, stderr) => {
                     if (error) {
                         console.error(`exec error: ${error}`);
                     }
@@ -94,7 +94,7 @@ async function build(project_zip_url){
                     console.log(`stdout: ${stdout}`);
 
                     // Pushing the docker image
-                    exec("docker push ash538/deployment-bot:v1."+toString(itr), (error, stdout, stderr) => {
+                    exec("docker push ash538/deployment-bot:v1."+String(itr), (error, stdout, stderr) => {
                         if (error) {
                             console.error(`exec error: ${error}`);
                             return;
@@ -104,7 +104,9 @@ async function build(project_zip_url){
                             return;
                         }
                         console.log(`stdout: ${stdout}`);
-                        axios.post(process.env.HOST_QUEUE_SERVICE_URL+'/enqueue', { zip_to_build: "ash538/deployment-bot:v1."+toString(itr) });
+                        axios.post(process.env.HOST_QUEUE_SERVICE_URL+'/enqueue', { zip_to_build: "ash538/deployment-bot:v1."+String(itr) });
+                        fse.remove("./downloaded_projects/curr_project.zip", (err) => err && console.error(err));
+                        fse.remove("./downloaded_projects/"+app_path, (err) => err && console.error(err));
                         itr++;
                     });
                 });

@@ -9,8 +9,8 @@ function sleep(ms){
     return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-async function deploy(){
-    exec('gcloud run deploy frontend-test --image ash538/deployment-bot:v1.0 --platform managed --region asia-south2 --allow-unauthenticated --port 3000', (error, stdout, stderr) => {
+async function deploy(img){
+    exec('gcloud run deploy react-app-test --image '+img+' --platform managed --region asia-south2 --allow-unauthenticated --port 3000', (error, stdout, stderr) => {
         if (error) {
             console.error(`exec error: ${error}`);
         }

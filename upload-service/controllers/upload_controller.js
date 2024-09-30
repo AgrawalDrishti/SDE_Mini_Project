@@ -14,7 +14,7 @@ const keyFilePath = '../upload-service/gcp_key.json';
 
 if (!fs.existsSync(keyFilePath)) {
     console.error('Service account key file is missing!');
-    process.exit(1);
+    // process.exit(1);
 }
 
 
@@ -104,7 +104,7 @@ function is_valid_github_repo_url(url) {
 Controller Functions
 */
 
-// req body should contain dockerhub url with key docker_image
+// req body should contain dockerhub image with key docker_image
 const docker_image_handler = async (req,res) => {
     console.log("Docker image post request received");
     try {
@@ -118,11 +118,13 @@ const docker_image_handler = async (req,res) => {
             return res.status(404).send({error:"No Docker image provided"});
         }
 
-        const url = "https://hub.docker.com/r/"+req.body.docker_image;
+        const url = "https://hub.docker.com/r/"+(req.body.docker_image).split(':')[0];
         const image_response = await axios.get(url);
         if (image_response.status === 200){
             console.log("Provided Docker image:",url);
-            // TO DO : Push this in queue2 for hosting
+            
+            axios.post(process.env.HOST_QUEUE_SERVICE_URL+'/enqueue', { zip_to_build: req.body.docker_image });
+
             return res.status(200).send({message:"Success"});
         } else {
             return res.status(400).send({error:"Failed"});

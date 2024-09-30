@@ -14,7 +14,7 @@ const keyFilePath = '../upload-service/gcp_key.json';
 
 if (!fs.existsSync(keyFilePath)) {
     console.error('Service account key file is missing!');
-    // process.exit(1);
+    process.exit(1);
 }
 
 

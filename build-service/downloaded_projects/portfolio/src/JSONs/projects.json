@@ -1,0 +1,28 @@
+{
+   "projects" : [
+    {
+        "name" : "On-Chain Radio" ,
+        "desc" : "A decentralised music streaming app",
+        "techstack" : "Aptos move , React Typescript",
+        "image" : "/images/bDHUqp.jpg"
+    },
+    {
+        "name" : "MinkBench" ,
+        "desc" : " Linux application for accessing computer performance",
+        "techstack" : "Shell scripts, Tkinter",
+        "image" : "/images/mink2.jpg"
+    },
+    {
+        "name" : "PHC Management System" ,
+        "desc" : "Campus-wide medical system",
+        "techstack" : "React JS , MongoDB , Node JS",
+        "image" : "/images/hosp.jpg"
+    },
+    {
+        "name" : "S-Mart App" ,
+        "desc" : "Supermarket Delivery App",
+        "techstack" : "Flutter, Firebase",
+        "image" : "/images/market.jpeg"
+    }
+   ] 
+}

@@ -8,6 +8,8 @@ const { exec } = require("child_process");
 const mutex = new Mutex();
 const storage = new Storage();
 
+var itr = 0;
+
 function sleep(ms){
     return new Promise(resolve => setTimeout(resolve, ms))
 }
@@ -52,7 +54,7 @@ async function build(project_zip_url){
         console.log(`stdout: ${stdout}`);
         const app_path = stdout.trim();
 
-        const dockerFileContent = `FROM node:18\n\nWORKDIR /app\n\nCOPY package*.json ./\n\nRUN npm install\n\nCOPY . .\n\nEXPOSE 3000\n\nCMD ["node", "app.js"]`;
+        const dockerFileContent = `FROM node:18\n\nWORKDIR /app\n\nCOPY package*.json ./\n\nRUN npm install\n\nCOPY . .\n\nEXPOSE 3000\n\nCMD [ "npm", "start" ]`;
         fs.writeFileSync("./downloaded_projects/"+app_path+"/Dockerfile", dockerFileContent.trim());
         console.log("Dockerfile created");
         
@@ -82,7 +84,7 @@ async function build(project_zip_url){
                 console.log(`stdout: ${stdout}`);
 
                 // Tagging the docker image
-                exec("docker tag my-curr-project ash538/deployment-bot:v1.0", (error, stdout, stderr) => {
+                exec("docker tag my-curr-project ash538/deployment-bot:v1."+toString(itr), (error, stdout, stderr) => {
                     if (error) {
                         console.error(`exec error: ${error}`);
                     }
@@ -92,7 +94,7 @@ async function build(project_zip_url){
                     console.log(`stdout: ${stdout}`);
 
                     // Pushing the docker image
-                    exec("docker push ash538/deployment-bot:v1.0", (error, stdout, stderr) => {
+                    exec("docker push ash538/deployment-bot:v1."+toString(itr), (error, stdout, stderr) => {
                         if (error) {
                             console.error(`exec error: ${error}`);
                             return;
@@ -102,6 +104,8 @@ async function build(project_zip_url){
                             return;
                         }
                         console.log(`stdout: ${stdout}`);
+                        axios.post(process.env.HOST_QUEUE_SERVICE_URL+'/enqueue', { zip_to_build: "ash538/deployment-bot:v1."+toString(itr) });
+                        itr++;
                     });
                 });
             });
@@ -113,7 +117,7 @@ async function startBuilding(){
     while(true){
         const release = await mutex.acquire();
         try {
-            const result = await axios.get(process.env.QUEUE_SERVICE_URL+'/dequeue');
+            const result = await axios.get(process.env.BUILD_QUEUE_SERVICE_URL+'/dequeue');
             if (result.data.message == null){
                 console.log("No project to build, sleeping for 5s");
                 await sleep(5000);

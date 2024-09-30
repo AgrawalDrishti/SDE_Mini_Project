@@ -172,7 +172,7 @@ const github_url_handler = async (req, res) => {
                 console.log("Uploading zip");
                 await uploadFileToBucket(zipPath, destination);
 
-                axios.post(process.env.QUEUE_SERVICE_URL+'/enqueue', { zip_to_build: destination });
+                axios.post(process.env.BUILD_QUEUE_SERVICE_URL+'/enqueue', { zip_to_build: destination });
                 
                 fs.rmdir(localPath, {recursive:true} , (err) => err && console.error(err));
                 fse.remove(zipPath, (err) => err && console.error(err));
@@ -227,15 +227,15 @@ const zip_file_handler = async (req,res) => {
             return res.status(400).send({error:"Zip file contains node_modules, please remove them"});
         }
         
-        const destination = 'ClonedRepositories/'+crypto.createHash('sha256').update(file.name).digest('hex') + '.zip';
+        const destination = crypto.createHash('sha256').update(file.name).digest('hex') + '.zip';
         const zipPath = './cloned_repositories/' + destination;
         
         fs.writeFile(zipPath, zipBuffer, (err) => err && console.error(err));
         
         console.log("Uploading zip");
-        await uploadFileToBucket(zipPath, destination);
+        await uploadFileToBucket(zipPath, 'ClonedRepositories/'+destination);
 
-        axios.post(process.env.QUEUE_SERVICE_URL+'/enqueue', { zip_to_build: destination });
+        axios.post(process.env.BUILD_QUEUE_SERVICE_URL+'/enqueue', { zip_to_build: 'ClonedRepositories/'+destination });
 
         fse.remove(zipPath, (err) => err && console.error(err));
         return res.status(200).send({ message: "Success, file saved" });

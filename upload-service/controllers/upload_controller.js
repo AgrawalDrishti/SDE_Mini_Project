@@ -148,7 +148,7 @@ const github_url_handler = async (req, res) => {
         }
 
         if (!is_valid_github_repo_url(url)) {
-            return res.status(400).send({ error: "Invalid GitHub Repository URL" });
+            return res.status(404).send({ error: "Invalid GitHub Repository URL" });
         }
 
         const repo_response = await axios.get(url);
@@ -228,10 +228,10 @@ const zip_file_handler = async (req,res) => {
         }
         
         const destination = 'ClonedRepositories/'+crypto.createHash('sha256').update(file.name).digest('hex') + '.zip';
-        const zipPath = './cloned_repositories' + destination;
+        const zipPath = './cloned_repositories/' + destination;
         
         fs.writeFile(zipPath, zipBuffer, (err) => err && console.error(err));
-
+        
         console.log("Uploading zip");
         await uploadFileToBucket(zipPath, destination);
 

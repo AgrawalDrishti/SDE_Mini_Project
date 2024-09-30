@@ -67,4 +67,4 @@ To set up the services, open 3 terminals and start each  of the below services i
     ```bash
     npm run dev
     ```
-3. **The build server will run on PORT 3002**
+3. **The host server will run on PORT 3002**

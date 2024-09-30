@@ -56,7 +56,7 @@ To set up the services, open 3 terminals and start each  of the below services i
 3. **The build server will run on PORT 3001**
 
 
-### b. Host service
+### c. Host service
 
 1. **Install Dependencies:**
    ```bash
